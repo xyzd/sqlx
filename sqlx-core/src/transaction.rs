@@ -23,7 +23,7 @@ impl<T> Transaction<T>
 where
     T: Connection,
 {
-    pub(crate) async fn new(depth: u32, mut inner: T) -> crate::Result<Self> {
+    pub(crate) async fn new(depth: u32, mut inner: T) -> crate::Result<T::Database, Self> {
         if depth == 0 {
             inner.execute("BEGIN").await?;
         } else {
@@ -38,11 +38,11 @@ where
         })
     }
 
-    pub async fn begin(mut self) -> crate::Result<Transaction<T>> {
+    pub async fn begin(mut self) -> crate::Result<T::Database, Transaction<T>> {
         Transaction::new(self.depth, self.inner.take().expect(ERR_FINALIZED)).await
     }
 
-    pub async fn commit(mut self) -> crate::Result<T> {
+    pub async fn commit(mut self) -> crate::Result<T::Database, T> {
         let mut inner = self.inner.take().expect(ERR_FINALIZED);
         let depth = self.depth;
 
@@ -57,7 +57,7 @@ where
         Ok(inner)
     }
 
-    pub async fn rollback(mut self) -> crate::Result<T> {
+    pub async fn rollback(mut self) -> crate::Result<T::Database, T> {
         let mut inner = self.inner.take().expect(ERR_FINALIZED);
         let depth = self.depth;
 
@@ -105,7 +105,7 @@ where
     fn execute<'e, 'q: 'e, 't: 'e, E: 'e>(
         &'t mut self,
         query: E,
-    ) -> BoxFuture<'e, crate::Result<u64>>
+    ) -> BoxFuture<'e, crate::Result<T::Database, u64>>
     where
         E: Execute<'q, Self::Database>,
     {
@@ -122,7 +122,7 @@ where
     fn describe<'e, 'q, E: 'e>(
         &'e mut self,
         query: E,
-    ) -> BoxFuture<'e, crate::Result<Describe<Self::Database>>>
+    ) -> BoxFuture<'e, crate::Result<T::Database, Describe<Self::Database>>>
     where
         E: Execute<'q, Self::Database>,
     {

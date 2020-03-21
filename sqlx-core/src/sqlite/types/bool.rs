@@ -17,7 +17,7 @@ impl Encode<Sqlite> for bool {
 }
 
 impl<'a> Decode<'a, Sqlite> for bool {
-    fn decode(value: SqliteResultValue<'a>) -> crate::Result<bool> {
+    fn decode(value: SqliteResultValue<'a>) -> crate::Result<Sqlite, bool> {
         Ok(value.int() != 0)
     }
 }

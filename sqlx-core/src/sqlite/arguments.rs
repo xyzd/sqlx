@@ -68,7 +68,7 @@ impl Arguments for SqliteArguments {
 }
 
 impl SqliteArgumentValue {
-    pub(super) fn bind(&self, statement: &mut SqliteStatement, index: usize) -> crate::Result<()> {
+    pub(super) fn bind(&self, statement: &mut SqliteStatement, index: usize) -> crate::Result<Sqlite, ()> {
         // TODO: Handle error of trying to bind too many parameters here
         let index = index as c_int;
 

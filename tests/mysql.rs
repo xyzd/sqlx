@@ -1,5 +1,6 @@
 use futures::TryStreamExt;
 use sqlx::{mysql::MySqlQueryAs, Connection, Executor, MySql, MySqlPool};
+use sqlx::error::DatabaseError;
 use sqlx_test::new;
 use std::time::Duration;
 
@@ -119,7 +120,7 @@ async fn pool_immediately_fails_with_db_error() -> anyhow::Result<()> {
     let res = pool.acquire().await;
 
     match res {
-        Err(sqlx::Error::Database(err)) if err.message().contains("Access denied") => {
+        Err(sqlx::Error::Database(err)) if (*err).message().contains("Access denied") => {
             // Access was properly denied
         }
 

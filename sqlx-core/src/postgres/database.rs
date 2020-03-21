@@ -1,7 +1,9 @@
 use crate::database::{Database, HasCursor, HasRawValue, HasRow};
+use crate::postgres::error::PgError;
 use crate::postgres::row::PgValue;
 
 /// **Postgres** database driver.
+#[derive(Debug)]
 pub struct Postgres;
 
 impl Database for Postgres {
@@ -14,6 +16,8 @@ impl Database for Postgres {
     type TableId = u32;
 
     type RawBuffer = Vec<u8>;
+
+    type Error = PgError;
 }
 
 impl<'a> HasRow<'a> for Postgres {

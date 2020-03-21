@@ -29,7 +29,7 @@ impl SqliteConnection {
         &mut self,
         query: &mut &str,
         persistent: bool,
-    ) -> crate::Result<Option<usize>> {
+    ) -> crate::Result<Sqlite, Option<usize>> {
         // TODO: Revisit statement caching and allow cache expiration by using a
         //       generational index
 
@@ -86,7 +86,7 @@ impl Executor for SqliteConnection {
     fn execute<'e, 'q: 'e, 'c: 'e, E: 'e>(
         &'c mut self,
         query: E,
-    ) -> BoxFuture<'e, crate::Result<u64>>
+    ) -> BoxFuture<'e, crate::Result<Sqlite, u64>>
     where
         E: Execute<'q, Self::Database>,
     {
@@ -124,7 +124,7 @@ impl Executor for SqliteConnection {
     fn describe<'e, 'q, E: 'e>(
         &'e mut self,
         query: E,
-    ) -> BoxFuture<'e, crate::Result<Describe<Self::Database>>>
+    ) -> BoxFuture<'e, crate::Result<Sqlite, Describe<Self::Database>>>
     where
         E: Execute<'q, Self::Database>,
     {

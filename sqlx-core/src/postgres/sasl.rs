@@ -5,6 +5,7 @@ use sha2::{Digest, Sha256};
 use crate::postgres::protocol::{
     hi, Authentication, AuthenticationSaslContinue, Message, SaslInitialResponse, SaslResponse,
 };
+use crate::postgres::database::Postgres;
 use crate::postgres::stream::PgStream;
 
 static GS2_HEADER: &'static str = "n,,";
@@ -46,7 +47,7 @@ pub(super) async fn authenticate<T: AsRef<str>>(
     stream: &mut PgStream,
     username: T,
     password: T,
-) -> crate::Result<()> {
+) -> crate::Result<Postgres, ()> {
     // channel-binding = "c=" base64
     let channel_binding = format!("{}={}", CHANNEL_ATTR, base64::encode(GS2_HEADER));
     // "n=" saslname ;; Usernames are prepared using SASLprep.

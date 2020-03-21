@@ -17,7 +17,7 @@ pub enum PgValue<'c> {
 }
 
 impl<'c> TryFrom<Option<PgValue<'c>>> for PgValue<'c> {
-    type Error = crate::Error;
+    type Error = crate::Error<Postgres>;
 
     #[inline]
     fn try_from(value: Option<PgValue<'c>>) -> Result<Self, Self::Error> {
@@ -41,7 +41,7 @@ impl<'c> Row<'c> for PgRow<'c> {
         self.data.len()
     }
 
-    fn try_get_raw<'r, I>(&'r self, index: I) -> crate::Result<Option<PgValue<'c>>>
+    fn try_get_raw<'r, I>(&'r self, index: I) -> crate::Result<Postgres, Option<PgValue<'c>>>
     where
         I: ColumnIndex<Self::Database>,
     {

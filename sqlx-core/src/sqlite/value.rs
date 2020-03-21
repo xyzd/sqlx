@@ -8,6 +8,7 @@ use libsqlite3_sys::{
 
 use crate::sqlite::statement::SqliteStatement;
 use crate::sqlite::types::SqliteType;
+use crate::sqlite::Sqlite;
 use crate::sqlite::SqliteConnection;
 use core::slice;
 
@@ -66,7 +67,7 @@ impl<'c> SqliteResultValue<'c> {
         }
     }
 
-    pub(crate) fn text(&self) -> crate::Result<&'c str> {
+    pub(crate) fn text(&self) -> crate::Result<Sqlite, &'c str> {
         #[allow(unsafe_code)]
         let raw = unsafe {
             let ptr =
@@ -80,7 +81,7 @@ impl<'c> SqliteResultValue<'c> {
         raw.to_str().map_err(crate::Error::decode)
     }
 
-    pub(crate) fn blob(&self) -> crate::Result<&'c [u8]> {
+    pub(crate) fn blob(&self) -> crate::Result<Sqlite, &'c [u8]> {
         let index = self.index as i32;
 
         #[allow(unsafe_code)]

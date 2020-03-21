@@ -1,5 +1,6 @@
 use crate::error::DatabaseError;
 use crate::mysql::protocol::ErrPacket;
+use crate::mysql::MySql;
 
 pub struct MySqlError(pub(super) ErrPacket);
 
@@ -9,4 +10,4 @@ impl DatabaseError for MySqlError {
     }
 }
 
-impl_fmt_error!(MySqlError);
+impl_fmt_error!(MySql, MySqlError);

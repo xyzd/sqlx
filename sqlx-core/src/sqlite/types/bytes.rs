@@ -30,13 +30,13 @@ impl Encode<Sqlite> for Vec<u8> {
 }
 
 impl<'de> Decode<'de, Sqlite> for &'de [u8] {
-    fn decode(value: SqliteResultValue<'de>) -> crate::Result<&'de [u8]> {
+    fn decode(value: SqliteResultValue<'de>) -> crate::Result<Sqlite, &'de [u8]> {
         value.blob()
     }
 }
 
 impl<'de> Decode<'de, Sqlite> for Vec<u8> {
-    fn decode(value: SqliteResultValue<'de>) -> crate::Result<Vec<u8>> {
+    fn decode(value: SqliteResultValue<'de>) -> crate::Result<Sqlite, Vec<u8>> {
         <&[u8] as Decode<Sqlite>>::decode(value).map(ToOwned::to_owned)
     }
 }

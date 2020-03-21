@@ -1,4 +1,5 @@
 use crate::io::Buf;
+use crate::postgres::database::Postgres;
 use byteorder::NetworkEndian;
 
 #[derive(Debug)]
@@ -9,7 +10,7 @@ pub(crate) struct NotificationResponse {
 }
 
 impl NotificationResponse {
-    pub(crate) fn read(mut buf: &[u8]) -> crate::Result<Self> {
+    pub(crate) fn read(mut buf: &[u8]) -> crate::Result<Postgres, Self> {
         let pid = buf.get_u32::<NetworkEndian>()?;
         let channel_name = buf.get_str_nul()?.to_owned();
         let message = buf.get_str_nul()?.to_owned();

@@ -64,7 +64,7 @@ impl PgConnection {
         self.stream.write(protocol::Sync);
     }
 
-    async fn wait_until_ready(&mut self) -> crate::Result<()> {
+    async fn wait_until_ready(&mut self) -> crate::Result<Postgres, ()> {
         // depending on how the previous query finished we may need to continue
         // pulling messages from the stream until we receive a [ReadyForQuery] message
 
@@ -94,7 +94,7 @@ impl PgConnection {
         &mut self,
         query: &str,
         arguments: Option<PgArguments>,
-    ) -> crate::Result<Option<StatementId>> {
+    ) -> crate::Result<Postgres, Option<StatementId>> {
         let statement = if let Some(arguments) = arguments {
             // Check the statement cache for a statement ID that matches the given query
             // If it doesn't exist, we generate a new statement ID and write out [Parse] to the
@@ -139,7 +139,7 @@ impl PgConnection {
     async fn describe<'e, 'q: 'e>(
         &'e mut self,
         query: &'q str,
-    ) -> crate::Result<Describe<Postgres>> {
+    ) -> crate::Result<Postgres, Describe<Postgres>> {
         self.is_ready = false;
 
         let statement = self.write_prepare(query, &Default::default());
@@ -212,7 +212,7 @@ impl PgConnection {
     async fn get_type_names(
         &mut self,
         ids: impl IntoIterator<Item = TypeId>,
-    ) -> crate::Result<HashMap<u32, SharedStr>> {
+    ) -> crate::Result<Postgres, HashMap<u32, SharedStr>> {
         let type_ids: HashSet<u32> = ids.into_iter().map(|id| id.0).collect::<HashSet<u32>>();
 
         if type_ids.is_empty() {
@@ -244,7 +244,7 @@ impl PgConnection {
 
         crate::query::query(&query)
             .bind_all(args)
-            .try_map(|row: PgRow| -> crate::Result<(u32, SharedStr)> {
+            .try_map(|row: PgRow| -> crate::Result<Postgres, (u32, SharedStr)> {
                 Ok((
                     row.try_get::<i32, _>(0)? as u32,
                     row.try_get::<String, _>(1)?.into(),
@@ -259,7 +259,7 @@ impl PgConnection {
         &mut self,
         fields: Box<[Field]>,
         type_names: HashMap<u32, SharedStr>,
-    ) -> crate::Result<Vec<Column<Postgres>>> {
+    ) -> crate::Result<Postgres, Vec<Column<Postgres>>> {
         if fields.is_empty() {
             return Ok(vec![]);
         }
@@ -303,7 +303,7 @@ impl PgConnection {
             })
             .fetch(self)
             .zip(stream::iter(fields.into_vec().into_iter().enumerate()))
-            .map(|(row, (fidx, field))| -> crate::Result<Column<_>> {
+            .map(|(row, (fidx, field))| -> crate::Result<Postgres, Column<_>> {
                 let (idx, non_null) = row?;
 
                 if idx != fidx as i32 {
@@ -325,7 +325,7 @@ impl PgConnection {
 
     // Poll messages from Postgres, counting the rows affected, until we finish the query
     // This must be called directly after a call to [PgConnection::execute]
-    async fn affected_rows(&mut self) -> crate::Result<u64> {
+    async fn affected_rows(&mut self) -> crate::Result<Postgres, u64> {
         let mut rows = 0;
 
         loop {
@@ -371,7 +371,7 @@ impl Executor for super::PgConnection {
     fn execute<'e, 'q: 'e, 'c: 'e, E: 'e>(
         &'c mut self,
         query: E,
-    ) -> BoxFuture<'e, crate::Result<u64>>
+    ) -> BoxFuture<'e, crate::Result<Postgres, u64>>
     where
         E: Execute<'q, Self::Database>,
     {
@@ -393,7 +393,7 @@ impl Executor for super::PgConnection {
     fn describe<'e, 'q, E: 'e>(
         &'e mut self,
         query: E,
-    ) -> BoxFuture<'e, crate::Result<Describe<Self::Database>>>
+    ) -> BoxFuture<'e, crate::Result<Postgres, Describe<Self::Database>>>
     where
         E: Execute<'q, Self::Database>,
     {

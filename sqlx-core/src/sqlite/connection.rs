@@ -14,6 +14,7 @@ use libsqlite3_sys::{
 use crate::connection::{Connect, Connection};
 use crate::executor::Executor;
 use crate::sqlite::statement::SqliteStatement;
+use crate::sqlite::Sqlite;
 use crate::sqlite::worker::Worker;
 use crate::sqlite::SqliteError;
 use crate::url::Url;
@@ -47,7 +48,7 @@ unsafe impl Send for SqliteConnectionHandle {}
 #[allow(unsafe_code)]
 unsafe impl Sync for SqliteConnectionHandle {}
 
-async fn establish(url: crate::Result<Url>) -> crate::Result<SqliteConnection> {
+async fn establish(url: std::result::Result<Url, url::ParseError>) -> crate::Result<Sqlite, SqliteConnection> {
     let mut worker = Worker::new();
 
     let url = url?;
@@ -61,7 +62,7 @@ async fn establish(url: crate::Result<Url>) -> crate::Result<SqliteConnection> {
     let filename = CString::new(url).unwrap();
 
     let handle = worker
-        .run(move || -> crate::Result<SqliteConnectionHandle> {
+        .run(move || -> crate::Result<Sqlite, SqliteConnectionHandle> {
             let mut handle = null_mut();
 
             // [SQLITE_OPEN_NOMUTEX] will instruct [sqlite3_open_v2] to return an error if it
@@ -106,9 +107,9 @@ impl SqliteConnection {
 }
 
 impl Connect for SqliteConnection {
-    fn connect<T>(url: T) -> BoxFuture<'static, crate::Result<SqliteConnection>>
+    fn connect<T>(url: T) -> BoxFuture<'static, crate::Result<Sqlite, SqliteConnection>>
     where
-        T: TryInto<Url, Error = crate::Error>,
+        T: TryInto<Url, Error = url::ParseError>,
         Self: Sized,
     {
         let url = url.try_into();
@@ -133,12 +134,12 @@ PRAGMA synchronous = NORMAL;
 }
 
 impl Connection for SqliteConnection {
-    fn close(self) -> BoxFuture<'static, crate::Result<()>> {
+    fn close(self) -> BoxFuture<'static, crate::Result<Sqlite, ()>> {
         // All necessary behavior is handled on drop
         Box::pin(future::ok(()))
     }
 
-    fn ping(&mut self) -> BoxFuture<crate::Result<()>> {
+    fn ping(&mut self) -> BoxFuture<crate::Result<Sqlite, ()>> {
         // For SQLite connections, PING does effectively nothing
         Box::pin(future::ok(()))
     }

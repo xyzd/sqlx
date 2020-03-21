@@ -5,6 +5,7 @@ use crate::connection::Connect;
 use crate::cursor::Cursor;
 use crate::row::Row;
 use crate::types::TypeInfo;
+use std::error::Error as StdError;
 
 /// A database driver.
 ///
@@ -16,6 +17,7 @@ where
     Self: for<'c> HasRow<'c, Database = Self>,
     Self: for<'c> HasRawValue<'c>,
     Self: for<'c, 'q> HasCursor<'c, 'q, Database = Self>,
+    Self: std::fmt::Debug,
 {
     /// The concrete `Connection` implementation for this database.
     type Connection: Connect<Database = Self>;
@@ -30,6 +32,8 @@ where
     type TableId: Display + Clone;
 
     type RawBuffer;
+
+    type Error: StdError + Send + Sync;
 }
 
 pub trait HasRawValue<'c> {

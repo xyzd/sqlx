@@ -1,4 +1,5 @@
 use crate::error::DatabaseError;
+use crate::sqlite::Sqlite;
 use libsqlite3_sys::sqlite3_errstr;
 use std::ffi::CStr;
 use std::os::raw::c_int;
@@ -32,4 +33,4 @@ impl DatabaseError for SqliteError {
     }
 }
 
-impl_fmt_error!(SqliteError);
+impl_fmt_error!(Sqlite, SqliteError);

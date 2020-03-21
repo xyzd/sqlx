@@ -1,8 +1,9 @@
 use crate::mysql::stream::MySqlStream;
+use super::MySql;
 use crate::url::Url;
 
 #[cfg_attr(not(feature = "tls"), allow(unused_variables))]
-pub(super) async fn upgrade_if_needed(stream: &mut MySqlStream, url: &Url) -> crate::Result<()> {
+pub(super) async fn upgrade_if_needed(stream: &mut MySqlStream, url: &Url) -> crate::Result<MySql, ()> {
     #[cfg_attr(not(feature = "tls"), allow(unused_imports))]
     use crate::mysql::protocol::Capabilities;
 
@@ -89,7 +90,7 @@ async fn try_upgrade(
     url: &Url,
     ca_file: Option<&str>,
     accept_invalid_hostnames: bool,
-) -> crate::Result<()> {
+) -> crate::Result<MySql, ()> {
     use crate::mysql::protocol::SslRequest;
     use crate::runtime::fs;
 

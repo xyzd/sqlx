@@ -106,11 +106,11 @@ where
     /// open a new connection, or if an idle connection is returned to the pool.
     ///
     /// Returns an error if `deadline` elapses before we are woken.
-    async fn wait_for_conn(&self, deadline: Instant) -> crate::Result<()> {
+    async fn wait_for_conn(&self, deadline: Instant) -> crate::Result<C::Database, ()> {
         let mut waker_pushed = false;
 
         timeout(
-            deadline_as_timeout(deadline)?,
+            deadline_as_timeout::<C::Database>(deadline)?,
             // `poll_fn` gets us easy access to a `Waker` that we can push to our queue
             future::poll_fn(|ctx| -> Poll<()> {
                 if !waker_pushed {
@@ -124,7 +124,7 @@ where
             }),
         )
         .await
-        .map_err(|_| crate::Error::PoolTimedOut(None))
+        .map_err(|_| crate::Error::<C::Database>::PoolTimedOut(None))
     }
 }
 
@@ -132,7 +132,7 @@ impl<C> SharedPool<C>
 where
     C: Connect,
 {
-    pub(super) async fn new_arc(url: &str, options: Options) -> crate::Result<Arc<Self>> {
+    pub(super) async fn new_arc(url: &str, options: Options) -> crate::Result<C::Database, Arc<Self>> {
         let mut pool = Self {
             url: url.to_owned(),
             idle_conns: ArrayQueue::new(options.max_size as usize),
@@ -151,7 +151,7 @@ where
         Ok(pool)
     }
 
-    pub(super) async fn acquire<'s>(&'s self) -> crate::Result<Floating<'s, Live<C>>> {
+    pub(super) async fn acquire<'s>(&'s self) -> crate::Result<C::Database, Floating<'s, Live<C>>> {
         let start = Instant::now();
         let deadline = start + self.options.connect_timeout;
 
@@ -181,11 +181,11 @@ where
             self.wait_for_conn(deadline).await?;
         }
 
-        Err(Error::PoolClosed)
+        Err(Error::<C::Database>::PoolClosed)
     }
 
     // takes `&mut self` so this can only be called during init
-    async fn init_min_connections(&mut self) -> crate::Result<()> {
+    async fn init_min_connections(&mut self) -> crate::Result<C::Database, ()> {
         for _ in 0..self.options.min_size {
             let deadline = Instant::now() + self.options.connect_timeout;
 
@@ -208,12 +208,12 @@ where
         &'s self,
         deadline: Instant,
         guard: DecrementSizeGuard<'s>,
-    ) -> crate::Result<Option<Floating<'s, Live<C>>>> {
+    ) -> crate::Result<C::Database, Option<Floating<'s, Live<C>>>> {
         if self.is_closed() {
-            return Err(Error::PoolClosed);
+            return Err(Error::<C::Database>::PoolClosed);
         }
 
-        let timeout = super::deadline_as_timeout(deadline)?;
+        let timeout = super::deadline_as_timeout::<C::Database>(deadline)?;
 
         // result here is `Result<Result<C, Error>, TimeoutError>`
         match crate::runtime::timeout(timeout, C::connect(&self.url)).await {
@@ -222,7 +222,7 @@ where
 
             // IO error while connecting, this should definitely be logged
             // and we should attempt to retry
-            Ok(Err(crate::Error::Io(e))) => {
+            Ok(Err(crate::Error::<C::Database>::Io(e))) => {
                 log::warn!("error establishing a connection: {}", e);
 
                 Ok(None)
@@ -233,7 +233,7 @@ where
             Ok(Err(e)) => Err(e),
 
             // timed out
-            Err(e) => Err(Error::PoolTimedOut(Some(Box::new(e)))),
+            Err(e) => Err(Error::<C::Database>::PoolTimedOut(Some(Box::new(e)))),
         }
     }
 }

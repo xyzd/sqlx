@@ -6,6 +6,7 @@ use byteorder::NetworkEndian;
 use crate::io::{Buf, BufStream, MaybeTlsStream};
 use crate::postgres::protocol::{Message, Response, Write};
 use crate::postgres::PgError;
+use crate::postgres::Postgres;
 use crate::url::Url;
 
 pub struct PgStream {
@@ -18,7 +19,7 @@ pub struct PgStream {
 }
 
 impl PgStream {
-    pub(super) async fn new(url: &Url) -> crate::Result<Self> {
+    pub(super) async fn new(url: &Url) -> crate::Result<Postgres, Self> {
         let stream = MaybeTlsStream::connect(&url, 5432).await?;
 
         Ok(Self {
@@ -27,7 +28,7 @@ impl PgStream {
         })
     }
 
-    pub(super) fn shutdown(&self) -> crate::Result<()> {
+    pub(super) fn shutdown(&self) -> crate::Result<Postgres, ()> {
         Ok(self.stream.shutdown(Shutdown::Both)?)
     }
 
@@ -40,11 +41,11 @@ impl PgStream {
     }
 
     #[inline]
-    pub(super) async fn flush(&mut self) -> crate::Result<()> {
+    pub(super) async fn flush(&mut self) -> crate::Result<Postgres, ()> {
         Ok(self.stream.flush().await?)
     }
 
-    pub(super) async fn read(&mut self) -> crate::Result<Message> {
+    pub(super) async fn read(&mut self) -> crate::Result<Postgres, Message> {
         loop {
             // https://www.postgresql.org/docs/12/protocol-overview.html#PROTOCOL-MESSAGE-CONCEPTS
 

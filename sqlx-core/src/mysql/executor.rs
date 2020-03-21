@@ -10,7 +10,7 @@ use crate::mysql::protocol::{
 use crate::mysql::{MySql, MySqlArguments, MySqlCursor, MySqlTypeInfo};
 
 impl super::MySqlConnection {
-    pub(super) async fn wait_until_ready(&mut self) -> crate::Result<()> {
+    pub(super) async fn wait_until_ready(&mut self) -> crate::Result<MySql, ()> {
         if !self.is_ready {
             loop {
                 let packet_id = self.stream.receive().await?[0];
@@ -38,7 +38,7 @@ impl super::MySqlConnection {
     }
 
     // Creates a prepared statement for the passed query string
-    async fn prepare(&mut self, query: &str) -> crate::Result<ComStmtPrepareOk> {
+    async fn prepare(&mut self, query: &str) -> crate::Result<MySql, ComStmtPrepareOk> {
         // https://dev.mysql.com/doc/dev/mysql-server/8.0.11/page_protocol_com_stmt_prepare.html
         self.stream.send(ComStmtPrepare { query }, true).await?;
 
@@ -52,7 +52,7 @@ impl super::MySqlConnection {
         ComStmtPrepareOk::read(packet)
     }
 
-    async fn drop_column_defs(&mut self, count: usize) -> crate::Result<()> {
+    async fn drop_column_defs(&mut self, count: usize) -> crate::Result<MySql, ()> {
         for _ in 0..count {
             let _column = ColumnDefinition::read(self.stream.receive().await?)?;
         }
@@ -66,7 +66,7 @@ impl super::MySqlConnection {
 
     // Gets a cached prepared statement ID _or_ prepares the statement if not in the cache
     // At the end we should have [cache_statement] and [cache_statement_columns] filled
-    async fn get_or_prepare(&mut self, query: &str) -> crate::Result<u32> {
+    async fn get_or_prepare(&mut self, query: &str) -> crate::Result<MySql, u32> {
         if let Some(&id) = self.cache_statement.get(query) {
             Ok(id)
         } else {
@@ -90,7 +90,7 @@ impl super::MySqlConnection {
         &mut self,
         query: &str,
         arguments: Option<MySqlArguments>,
-    ) -> crate::Result<Option<u32>> {
+    ) -> crate::Result<MySql, Option<u32>> {
         self.wait_until_ready().await?;
         self.is_ready = false;
 
@@ -120,7 +120,7 @@ impl super::MySqlConnection {
         }
     }
 
-    async fn affected_rows(&mut self) -> crate::Result<u64> {
+    async fn affected_rows(&mut self) -> crate::Result<MySql, u64> {
         let mut rows = 0;
 
         loop {
@@ -159,7 +159,7 @@ impl super::MySqlConnection {
 
     // method is not named describe to work around an intellijrust bug
     // otherwise it marks someone trying to describe the connection as "method is private"
-    async fn do_describe(&mut self, query: &str) -> crate::Result<Describe<MySql>> {
+    async fn do_describe(&mut self, query: &str) -> crate::Result<MySql, Describe<MySql>> {
         self.wait_until_ready().await?;
 
         let stmt = self.prepare(query).await?;
@@ -205,7 +205,7 @@ impl Executor for super::MySqlConnection {
     fn execute<'e, 'q: 'e, 'c: 'e, E: 'e>(
         &'c mut self,
         query: E,
-    ) -> BoxFuture<'e, crate::Result<u64>>
+    ) -> BoxFuture<'e, crate::Result<MySql, u64>>
     where
         E: Execute<'q, Self::Database>,
     {
@@ -227,7 +227,7 @@ impl Executor for super::MySqlConnection {
     fn describe<'e, 'q, E: 'e>(
         &'e mut self,
         query: E,
-    ) -> BoxFuture<'e, crate::Result<Describe<Self::Database>>>
+    ) -> BoxFuture<'e, crate::Result<MySql, Describe<Self::Database>>>
     where
         E: Execute<'q, Self::Database>,
     {

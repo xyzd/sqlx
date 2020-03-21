@@ -30,13 +30,13 @@ impl Encode<Sqlite> for String {
 }
 
 impl<'de> Decode<'de, Sqlite> for &'de str {
-    fn decode(value: SqliteResultValue<'de>) -> crate::Result<&'de str> {
+    fn decode(value: SqliteResultValue<'de>) -> crate::Result<Sqlite, &'de str> {
         value.text()
     }
 }
 
 impl<'de> Decode<'de, Sqlite> for String {
-    fn decode(value: SqliteResultValue<'de>) -> crate::Result<String> {
+    fn decode(value: SqliteResultValue<'de>) -> crate::Result<Sqlite, String> {
         <&str as Decode<Sqlite>>::decode(value).map(ToOwned::to_owned)
     }
 }

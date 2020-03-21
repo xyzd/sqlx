@@ -1,5 +1,6 @@
 use crate::error::DatabaseError;
 use crate::postgres::protocol::Response;
+use crate::postgres::Postgres;
 
 pub struct PgError(pub(super) Response);
 
@@ -29,4 +30,4 @@ impl DatabaseError for PgError {
     }
 }
 
-impl_fmt_error!(PgError);
+impl_fmt_error!(Postgres, PgError);

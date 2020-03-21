@@ -72,7 +72,7 @@ impl<'de, T> Decode<'de, Sqlite> for Option<T>
 where
     T: Decode<'de, Sqlite>,
 {
-    fn decode(value: SqliteResultValue<'de>) -> crate::Result<Self> {
+    fn decode(value: SqliteResultValue<'de>) -> crate::Result<Sqlite, Self> {
         match value.r#type() {
             SqliteType::Null => Ok(None),
             _ => <T as Decode<Sqlite>>::decode(value).map(Some),
