@@ -10,7 +10,7 @@ use crate::mysql::protocol::{
 use crate::mysql::{MySql, MySqlArguments, MySqlCursor, MySqlTypeInfo};
 
 impl super::MySqlConnection {
-    async fn wait_until_ready(&mut self) -> crate::Result<()> {
+    pub(super) async fn wait_until_ready(&mut self) -> crate::Result<()> {
         if !self.is_ready {
             loop {
                 let packet_id = self.stream.receive().await?[0];

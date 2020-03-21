@@ -168,8 +168,13 @@ where
         // could be implemented in terms of `fetch()` but this avoids overhead from `try_stream!`
         let mut cursor = executor.fetch_by_ref(self.query);
         let mut mapper = self.mapper;
-        let val = cursor.next().await?;
-        val.map(|row| mapper.try_map_row(row)).transpose()
+        let val = if let Some(row) = cursor.next().await? {
+            Ok(Some(mapper.try_map_row(row)?))
+        } else {
+            Ok(None)
+        };
+        cursor.next().await?;
+        val
     }
 
     pub async fn fetch_one<'e, E>(self, executor: E) -> crate::Result<F::Output>

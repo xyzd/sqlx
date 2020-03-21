@@ -323,11 +323,17 @@ impl Connect for MySqlConnection {
 }
 
 impl Connection for MySqlConnection {
-    fn close(self) -> BoxFuture<'static, crate::Result<()>> {
-        Box::pin(close(self.stream))
+    fn close(mut self) -> BoxFuture<'static, crate::Result<()>> {
+        Box::pin(async move {
+            self.wait_until_ready().await?;
+            close(self.stream).await
+        })
     }
 
     fn ping(&mut self) -> BoxFuture<crate::Result<()>> {
-        Box::pin(ping(&mut self.stream))
+        Box::pin(async move {
+            self.wait_until_ready().await?;
+            ping(&mut self.stream).await
+        })
     }
 }
