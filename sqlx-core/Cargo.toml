@@ -47,7 +47,7 @@ digest = { version = "0.8.1", default-features = false, optional = true, feature
 futures-channel = { version = "0.3.4", default-features = false, features = [ "alloc", "std" ] }
 futures-core = { version = "0.3.4", default-features = false }
 futures-util = { version = "0.3.4", default-features = false }
-generic-array = { version = "0.12.3", default-features = false, optional = true }
+generic-array = { version = "0.12.4", default-features = false, optional = true }
 hex = "0.4.2"
 hmac = { version = "0.7.1", default-features = false, optional = true }
 ipnetwork = { version = "0.16.0", default-features = false, optional = true }
