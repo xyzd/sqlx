@@ -70,7 +70,7 @@ sqlformat = "0.1.0"
 
 # <https://github.com/jgallagher/rusqlite/tree/master/libsqlite3-sys>
 [dependencies.libsqlite3-sys]
-version = "0.17.1"
+version = "0.25.1"
 optional = true
 default-features = false
 features = [ "pkg-config", "vcpkg", "bundled" ]
